@@ -12,7 +12,7 @@ export function GameHeader() {
             <span className="text-primary-foreground font-bold text-sm">🔍</span>
           </div>
           <h1 className="text-4xl font-bold text-balance bg-gradient-to-r from-foreground via-accent to-primary bg-clip-text text-transparent">
-            Rev Noir
+            Detective Rev
           </h1>
         </div>
 

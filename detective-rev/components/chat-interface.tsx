@@ -1,19 +1,29 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, RotateCcw, Eye, EyeOff, ArrowLeft, Skull, Crown, Zap } from "lucide-react"
+import { Button } from "./ui/button"
+import { Input } from "./ui/input"
+import { Badge } from "./ui/badge"
+import { ScrollArea } from "./ui/scroll-area"
+import {
+  Send,
+  Eye,
+  EyeOff,
+  Skull,
+  Crown,
+  Zap,
+  DoorOpen,
+  FilePlus,
+  Lightbulb,
+  Stamp,
+  Paperclip,
+} from "lucide-react"
 
 interface Message {
   id: string
   type: "user" | "ai"
   content: string
   timestamp: Date
-  isTyping?: boolean
 }
 
 interface ChatInterfaceProps {
@@ -25,13 +35,13 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
   const getInitialMessage = (diff: string): string => {
     const messages = {
       novice:
-        "Good evening, Detective. I've been expecting you. The body was discovered at midnight in the library. I'm willing to cooperate fully with your investigation. What would you like to know?",
+        "The file is open. The subject is waiting. Standard procedure, detective. What's your first question?",
       experienced:
-        "Detective... I suppose you're here about the unfortunate incident. Yes, I was here that night, but I'm not sure how much help I can be. The details are... fuzzy. What exactly do you want to know?",
+        "The subject seems nervous, but composed. They know the drill. It's on you to find the cracks. Where do you begin?",
       master:
-        "Ah, another detective. How predictable. Yes, there was a death - tragic, really. But I'm afraid my memory isn't what it used to be. Perhaps you should look elsewhere for answers?",
+        "This one's a professional. Every word is a calculation. One mistake and they'll walk. Don't make a mistake.",
       legendary:
-        "Detective, welcome to my domain. You think you can solve this little puzzle? How... amusing. The victim got what they deserved, but proving it? That's another matter entirely. Shall we dance?",
+        "You're in their world now. The room, the table, the silence... it's all part of their game. Your move, detective.",
     }
     return messages[diff as keyof typeof messages] || messages.novice
   }
@@ -47,37 +57,33 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showHints, setShowHints] = useState(true)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const getHints = (diff: string): string[] => {
     const hintSets = {
       novice: [
-        "Ask about the victim's identity",
-        "Inquire about the time of death",
-        "Question what they were doing that night",
-        "Ask about other people present",
-        "Investigate the murder weapon",
+        "Establish a timeline",
+        "Confirm the alibi",
+        "Ask about the victim",
+        "Check for inconsistencies",
       ],
       experienced: [
-        "Press for specific details about their alibi",
-        "Ask about their relationship with the victim",
-        "Question inconsistencies in their story",
-        "Inquire about potential motives",
-        "Challenge their memory gaps",
+        "Press on memory gaps",
+        "Inquire about motives",
+        "Bring up physical evidence",
+        "Note suspicious behavior",
       ],
       master: [
-        "Confront them with evidence",
-        "Ask about their whereabouts during the murder",
-        "Question their suspicious behavior",
-        "Press them on their lies",
-        "Demand the truth about their involvement",
+        "Use leading questions",
+        "Present a false theory",
+        "Confront with a direct accusation",
+        "Leverage their ego",
       ],
       legendary: [
-        "Challenge their manipulative tactics",
-        "Ask about their hidden agenda",
-        "Question their true motives",
-        "Confront them about their deception",
-        "Demand they stop playing games",
+        "Question their reality",
+        "Uncover the hidden agenda",
+        "Turn their logic against them",
+        "Break the fourth wall",
       ],
     }
     return hintSets[diff as keyof typeof hintSets] || hintSets.novice
@@ -97,10 +103,12 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
 
   const DifficultyIcon = getDifficultyIcon(difficulty)
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
-    }
+    scrollToBottom()
   }, [messages])
 
   const handleSendMessage = async () => {
@@ -117,14 +125,13 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
     setInputValue("")
     setIsLoading(true)
 
-    // Simulate AI response (replace with actual AI integration)
+    // Simulate AI response
     setTimeout(() => {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "ai",
         content: generateMockResponse(inputValue, difficulty),
         timestamp: new Date(),
-        isTyping: true,
       }
 
       setMessages((prev) => [...prev, aiMessage])
@@ -175,140 +182,182 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
     ])
   }
 
+  const parchmentStyle = {
+    background: `radial-gradient(ellipse at top, #fdf5e6, transparent),
+                 radial-gradient(ellipse at bottom, #faf0e6, transparent)`,
+    backgroundColor: "#f5f5dc", // Beige fallback
+    color: "#5a4a3a", // Sepia text
+    borderColor: "#a08d7d", // Brownish border
+  }
+
   return (
-    <div className="space-y-4 animate-in fade-in-50 duration-500">
-      <Card className="p-4 border-border/50 bg-card/30 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={onBackToMenu}
-            className="border-border/50 hover:bg-secondary/30 bg-transparent"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Menu
-          </Button>
-
-          <div className="flex items-center gap-2">
-            <DifficultyIcon className="h-5 w-5 text-primary" />
-            <Badge variant="secondary" className="capitalize">
-              {difficulty} Mode
-            </Badge>
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={resetConversation}
-            className="border-border/50 hover:bg-secondary/30 bg-transparent"
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
+    <div
+      className="relative font-mono p-2 sm:p-4 md:p-6 rounded-lg border-2 shadow-2xl shadow-black/50 max-w-5xl mx-auto"
+      style={parchmentStyle}
+    >
+      <div className="absolute top-6 left-6 sm:top-8 sm:left-8 opacity-80 pointer-events-none">
+        <div className="border-2 border-red-700 text-red-700 text-xl sm:text-2xl font-black tracking-widest uppercase -rotate-12 p-2 flex items-center gap-2">
+          <Stamp className="h-6 w-6 sm:h-8 sm:w-8" />
+          Confidential
         </div>
-      </Card>
+      </div>
 
-      {/* Chat Messages */}
-      <Card className="border-border/50 bg-card/30 backdrop-blur-sm">
-        <ScrollArea className="h-96 p-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.type === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary/50 text-secondary-foreground border border-border/50"
-                  }`}
+      <div className="text-center border-b-2 border-dashed border-stone-400/50 pb-4 mb-4 pt-16 sm:pt-0">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-widest uppercase text-stone-800">
+          Case File
+        </h1>
+        <p className="text-xs sm:text-sm text-stone-600 tracking-wider">
+          Case No. {new Date().getFullYear()}-042 | Difficulty:{" "}
+          <span
+            className="capitalize font-semibold"
+            style={{ color: "hsl(var(--primary))" }}
+          >
+            {difficulty}
+          </span>
+        </p>
+      </div>
+
+      <ScrollArea className="h-[50vh] sm:h-[55vh]">
+        <div className="space-y-8 p-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className="animate-in fade-in-50 duration-700"
+            >
+              <div
+                className={`border-t-2 pt-3 ${
+                  message.type === "user"
+                    ? "border-red-700/40"
+                    : "border-stone-400/40"
+                }`}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h4
+                    className={`font-bold tracking-wider flex items-center gap-2 text-xs sm:text-sm ${
+                      message.type === "user"
+                        ? "text-red-800/90"
+                        : "text-stone-600"
+                    }`}
+                  >
+                    {message.type === "user" ? (
+                      <><Paperclip className="h-4 w-4" /> DETECTIVE'S NOTE</>
+                    ) : (
+                      "SUSPECT TESTIMONY"
+                    )}
+                  </h4>
+                  <span className="text-xs text-stone-500 flex-shrink-0 pl-4">
+                    {message.timestamp.toLocaleTimeString()}
+                  </span>
+                </div>
+                <p
+                  className="text-sm sm:text-base leading-relaxed text-stone-800/90 pl-2 sm:pl-6"
+                  style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}
                 >
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm">{message.type === "user" ? "🕵️" : "🎭"}</span>
-                    <div className="flex-1">
-                      <p className={`text-sm leading-relaxed ${message.isTyping ? "typewriter" : ""}`}>
-                        {message.content}
-                      </p>
-                      <span className="text-xs opacity-70 mt-1 block">{message.timestamp.toLocaleTimeString()}</span>
-                    </div>
-                  </div>
-                </div>
+                  {message.content}
+                </p>
               </div>
-            ))}
+            </div>
+          ))}
+          {isLoading && (
+            <div className="animate-in fade-in-50 pt-3 border-t-2 border-stone-400/40">
+               <h4 className="font-bold tracking-wider flex items-center gap-2 text-xs sm:text-sm text-stone-600 mb-2">
+                ANALYZING...
+              </h4>
+              <div className="pl-6">
+                <div className="w-2 h-2 bg-stone-500 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-secondary/50 text-secondary-foreground border border-border/50 rounded-lg p-3 max-w-[80%]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🎭</span>
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+      <div className="border-t-2 border-dashed border-stone-400/50 p-4 mt-4 space-y-4">
+        {showHints && (
+          <div className="p-4 border border-dashed border-yellow-600/30 bg-yellow-500/5 rounded-md animate-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-yellow-800 flex items-center gap-2 tracking-wider">
+                <Lightbulb className="h-4 w-4" />
+                CASE CLUES
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowHints(false)}
+                className="h-7 w-7 p-0 text-yellow-800/70 hover:text-yellow-800 hover:bg-yellow-500/20"
+              >
+                <EyeOff className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {hints.map((hint, index) => (
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className="cursor-pointer hover:bg-yellow-500/20 transition-colors text-xs border-yellow-600/50 bg-yellow-500/10 text-yellow-900/80 p-2 font-normal tracking-wider"
+                  onClick={() => setInputValue(hint)}
+                >
+                  {hint}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </ScrollArea>
-      </Card>
+        )}
 
-      {/* Hints Panel */}
-      {showHints && (
-        <Card className="p-4 border-accent/20 bg-accent/5 animate-in slide-in-from-bottom-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-accent">Investigation Hints</h3>
-            <Button variant="ghost" size="sm" onClick={() => setShowHints(false)} className="h-6 w-6 p-0">
-              <EyeOff className="h-3 w-3" />
+        <div>
+          <label className="text-xs font-semibold tracking-wider text-stone-500 ml-1">NEW ENTRY</label>
+          <div className="flex gap-3 items-center mt-1">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Log your next question or finding..."
+              className="flex-1 bg-white/40 border-stone-400/80 focus:border-red-800/80 h-11 font-mono tracking-wider text-stone-800"
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              disabled={isLoading}
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || isLoading}
+              className="bg-red-800 hover:bg-red-700 h-11 px-6 shadow-md shadow-red-900/20 text-white"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              SUBMIT
             </Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {hints.map((hint, index) => (
-              <Badge
-                key={index}
-                variant="outline"
-                className="cursor-pointer hover:bg-accent/20 transition-colors text-xs border-accent/30"
-                onClick={() => setInputValue(hint)}
-              >
-                {hint}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      )}
+        </div>
 
-      {/* Input Area */}
-      <Card className="p-4 border-border/50 bg-card/30 backdrop-blur-sm">
-        <div className="flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask your question, Detective..."
-            className="flex-1 bg-input/50 border-border/50 focus:border-primary/50"
-            onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
-            className="bg-primary hover:bg-primary/80"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-          {!showHints && (
+        <div className="flex justify-between items-center pt-4 border-t border-stone-300/90 mt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToMenu}
+              className="hover:bg-stone-200 text-stone-600 hover:text-stone-800 text-xs"
+            >
+              <DoorOpen className="h-4 w-4 mr-2" />
+              Close Case File
+            </Button>
+            {!showHints && (
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowHints(true)}
-              className="border-border/50 hover:bg-secondary/30"
+              className="border-dashed border-yellow-600/80 text-yellow-800/80 hover:bg-yellow-500/20 hover:text-yellow-800"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 mr-2" />
+              Show Clues
             </Button>
           )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetConversation}
+              className="hover:bg-destructive/10 text-stone-600 hover:text-destructive text-xs"
+            >
+              <FilePlus className="h-4 w-4 mr-2" />
+              Start New Case
+            </Button>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

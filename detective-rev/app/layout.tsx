@@ -7,7 +7,7 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Rev Noir - Murder Mystery AI",
+  title: "Detective Rev - Murder Mystery AI",
   description: "Unravel the mystery. Question the AI. Discover the truth.",
   generator: "v0.app",
 }
