@@ -118,11 +118,22 @@
 }
 
 @layer base {
+  html {
+    background-image: url('/deskbackground.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    /* A dark brown fallback color from the image to prevent white flash */
+    background-color: #2a2018;
+  }
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply text-foreground font-sans;
+    /* The body must be transparent to let the html background show through */
+    background-color: transparent;
   }
 }
 
@@ -190,4 +201,13 @@
       transparent
     );
   pointer-events: none;
+}
+
+/* Custom scrollbar for parchment theme */
+.parchment-scroll-area [data-slot="scroll-area-thumb"] {
+  background-color: #a08d7d !important; /* Brownish color from the theme */
+}
+
+.parchment-scroll-area [data-slot="scroll-area-thumb"]:hover {
+  background-color: #8a796d !important; /* Slightly darker for hover */
 }
