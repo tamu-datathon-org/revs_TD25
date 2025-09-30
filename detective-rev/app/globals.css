@@ -211,3 +211,9 @@
 .parchment-scroll-area [data-slot="scroll-area-thumb"]:hover {
   background-color: #8a796d !important; /* Slightly darker for hover */
 }
+
+/* --- NEW CODE ADDED HERE --- */
+/* Custom animation for the detective folder opening */
+[data-state='open'] {
+  transform: rotateX(-160deg) translateY(-10px) translateZ(20px);
+}
