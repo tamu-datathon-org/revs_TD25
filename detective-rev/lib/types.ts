@@ -1,6 +1,8 @@
 export interface GeminiRequest {
   query: string;
   gameContext?: string;
+  difficulty?: string;
+  answer?: string;
 }
 
 export interface GeminiResponse {

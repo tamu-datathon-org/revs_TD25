@@ -13,6 +13,7 @@ import {
   Skull,
   Crown,
   Zap,
+  Shield,
   DoorOpen,
   FilePlus,
   Lightbulb,
@@ -30,80 +31,64 @@ interface Message {
 
 interface ChatInterfaceProps {
   difficulty: string
+  answer: string
   onBackToMenu: () => void
+  onGameWin: () => void
 }
 
 // ------------------- Pure Constants (no re-creation) -------------------
 const INITIAL_MESSAGES = {
-  novice:
+  level1:
     "The file is open. The subject is waiting. Standard procedure, detective. What's your first question?",
-  experienced:
+  level2:
     "The subject seems nervous, but composed. They know the drill. It's on you to find the cracks. Where do you begin?",
-  master:
+  level3:
     "This one's a professional. Every word is a calculation. One mistake and they'll walk. Don't make a mistake.",
-  legendary:
+  level4:
     "You're in their world now. The room, the table, the silence... it's all part of their game. Your move, detective.",
+  level5:
+    "Something feels wrong. The air is thick with deception. This isn't just a case anymore... it's a battle of minds. Proceed with extreme caution.",
 }
 
 const HINT_SETS: Record<string, string[]> = {
-  novice: [
-    "Establish a timeline",
-    "Confirm the alibi",
-    "Ask about the victim",
-    "Check for inconsistencies",
+  level1: [
+    "What is your name?",
+    "Where were you last night?",
+    "Do you know the victim?",
+    "Can anyone verify your alibi?",
   ],
-  experienced: [
-    "Press on memory gaps",
-    "Inquire about motives",
-    "Bring up physical evidence",
-    "Note suspicious behavior",
+  level2: [
+    "Tell me about your relationship",
+    "What were you doing at 9 PM?",
+    "Did you have any conflicts?",
+    "Who else was there?",
   ],
-  master: [
-    "Use leading questions",
-    "Present a false theory",
-    "Confront with a direct accusation",
-    "Leverage their ego",
+  level3: [
+    "Your story doesn't add up",
+    "I have evidence that contradicts you",
+    "Why are you lying to me?",
+    "What aren't you telling me?",
   ],
-  legendary: [
-    "Question their reality",
-    "Uncover the hidden agenda",
-    "Turn their logic against them",
-    "Break the fourth wall",
+  level4: [
+    "I know you're hiding something",
+    "The truth will come out eventually",
+    "Your accomplices already talked",
+    "This is your last chance to confess",
   ],
-}
-
-const RESPONSE_SETS: Record<string, string[]> = {
-  novice: [
-    "The victim was Dr. Eleanor Blackwood, a renowned archaeologist. She was working late in the library that night, researching ancient artifacts.",
-    "The murder weapon was a letter opener from the desk. It was found beside the body with fingerprints still on it.",
-    "I saw her around 11:30 PM. She seemed nervous about something, kept looking over her shoulder.",
-    "There were three other people in the house that night: the butler, the gardener, and Dr. Blackwood's research assistant.",
-  ],
-  experienced: [
-    "Dr. Blackwood? Yes, I knew her... professionally. But I can't say we were close. Why does that matter?",
-    "A letter opener, you say? Interesting. I wouldn't know anything about that. I was in my room all evening.",
-    "Look, Detective, I've told you what I remember. My memory isn't perfect, especially after a few drinks that night.",
-    "Other people? Well, there might have been others around. The house is large, people come and go...",
-  ],
-  master: [
-    "Dr. Blackwood was a fool who meddled in things she didn't understand. But that doesn't mean I killed her.",
-    "You're barking up the wrong tree, Detective. The real killer is probably long gone by now.",
-    "Evidence? What evidence? You have nothing concrete, just speculation and circumstantial nonsense.",
-    "I find it amusing that you think you can solve this case. Better detectives than you have tried and failed.",
-  ],
-  legendary: [
-    "Ah, you're getting warmer, Detective. But you're still missing the bigger picture. This goes deeper than one simple murder.",
-    "You think this is about Dr. Blackwood? She was just a pawn in a much larger game. The question is: are you smart enough to see it?",
-    "Every answer I give you is a choice, Detective. Choose wisely, because some truths are more dangerous than lies.",
-    "You're playing my game now, whether you realize it or not. The question is: will you survive long enough to win?",
+  level5: [
+    "What is the secret you're protecting?",
+    "Who are you really working for?",
+    "What's the real reason behind this?",
+    "Tell me the truth about everything",
   ],
 }
 
 const DIFFICULTY_ICONS = {
-  novice: Eye,
-  experienced: Zap,
-  master: Skull,
-  legendary: Crown,
+  level1: Eye,
+  level2: Zap,
+  level3: Skull,
+  level4: Crown,
+  level5: Shield,
 }
 
 const PARCHMENT_STYLE = {
@@ -115,15 +100,15 @@ const PARCHMENT_STYLE = {
 }
 
 // ------------------- Component -------------------
-export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) {
+export function ChatInterface({ difficulty, answer, onBackToMenu, onGameWin }: ChatInterfaceProps) {
   // Memoize values that depend only on props
   const initialMessage = useMemo(
-    () => INITIAL_MESSAGES[difficulty as keyof typeof INITIAL_MESSAGES] || INITIAL_MESSAGES.novice,
+    () => INITIAL_MESSAGES[difficulty as keyof typeof INITIAL_MESSAGES] || INITIAL_MESSAGES.level1,
     [difficulty]
   )
 
   const hints = useMemo(
-    () => HINT_SETS[difficulty as keyof typeof HINT_SETS] || HINT_SETS.novice,
+    () => HINT_SETS[difficulty as keyof typeof HINT_SETS] || HINT_SETS.level1,
     [difficulty]
   )
 
@@ -135,9 +120,12 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
     { id: "1", type: "ai", content: initialMessage, timestamp: new Date() },
   ])
   const [inputValue, setInputValue] = useState("")
+  const [answerGuess, setAnswerGuess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showHints, setShowHints] = useState(true)
   const [currentImage, setCurrentImage] = useState("/rev.png")
+  const [showAnswerBox, setShowAnswerBox] = useState(true)
+  const [wrongAttempts, setWrongAttempts] = useState(0)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -166,17 +154,34 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
     }
   }, [isLoading])
 
-  const generateMockResponse = useCallback(
-    (userInput: string): string => {
-      const responses =
-        RESPONSE_SETS[difficulty as keyof typeof RESPONSE_SETS] ||
-        RESPONSE_SETS.novice
-      return responses[Math.floor(Math.random() * responses.length)]
-    },
-    [difficulty]
-  )
+  const callGeminiAPI = useCallback(async (userInput: string): Promise<string> => {
+    try {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: userInput,
+          difficulty: difficulty,
+          answer: answer,
+          gameContext: `Detective interrogation game - Level ${difficulty.replace('level', '')}`
+        }),
+      });
 
-  const handleSendMessage = useCallback(() => {
+      if (!response.ok) {
+        throw new Error('Failed to get response from API');
+      }
+
+      const data = await response.json();
+      return data.response || 'I cannot respond to that question.';
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      return 'Something went wrong. The suspect seems to have gone silent.';
+    }
+  }, [difficulty, answer]);
+
+  const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isLoading) return
 
     const now = new Date()
@@ -188,21 +193,64 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = inputValue;
     setInputValue("")
     setIsLoading(true)
 
-    // Simulated AI response
-    setTimeout(() => {
+    try {
+      const aiResponse = await callGeminiAPI(currentInput);
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "ai",
-        content: generateMockResponse(inputValue),
+        content: aiResponse,
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, aiMessage])
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "ai",
+        content: "The suspect has gone silent. Something went wrong with the interrogation.",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
       setIsLoading(false)
-    }, 1200) // slightly shorter delay for smoother UX
-  }, [inputValue, isLoading, generateMockResponse])
+    }
+  }, [inputValue, isLoading, callGeminiAPI])
+
+  const handleAnswerSubmit = useCallback(() => {
+    if (!answerGuess.trim()) return;
+
+    // Check if the answer is correct (case-insensitive, trimmed)
+    const isCorrect = answerGuess.toLowerCase().trim() === answer.toLowerCase().trim();
+    
+    if (isCorrect) {
+      // Player wins!
+      onGameWin();
+    } else {
+      // Wrong answer
+      const newAttempts = wrongAttempts + 1;
+      setWrongAttempts(newAttempts);
+      setAnswerGuess("");
+      
+      // Add a message to the chat about the wrong attempt
+      const wrongMessage: Message = {
+        id: Date.now().toString(),
+        type: "ai",
+        content: newAttempts >= 3 
+          ? "Three wrong attempts! The case has gone cold. The suspect walks free..." 
+          : `Wrong answer! That's attempt ${newAttempts}/3. Keep investigating, detective.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, wrongMessage]);
+      
+      // Hide answer box after 3 wrong attempts
+      if (newAttempts >= 3) {
+        setShowAnswerBox(false);
+      }
+    }
+  }, [answerGuess, answer, wrongAttempts, onGameWin]);
 
   const resetConversation = useCallback(() => {
     setMessages([
@@ -213,6 +261,9 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
         timestamp: new Date(),
       },
     ])
+    setWrongAttempts(0);
+    setAnswerGuess("");
+    setShowAnswerBox(true);
   }, [initialMessage])
 
   // ------------------- Render -------------------
@@ -343,6 +394,53 @@ export function ChatInterface({ difficulty, onBackToMenu }: ChatInterfaceProps) 
                   {hint}
                 </Badge>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Answer Submission Box */}
+        {showAnswerBox && (
+          <div className="p-4 border-2 border-green-600/30 bg-green-500/5 rounded-md animate-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-green-800 flex items-center gap-2 tracking-wider">
+                <Crown className="h-4 w-4" />
+                FINAL ANSWER SUBMISSION
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAnswerBox(false)}
+                className="h-7 w-7 p-0 text-green-800/70 hover:text-green-800 hover:bg-green-500/20"
+              >
+                <EyeOff className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs text-green-700/80">
+                Think you've cracked the case? Submit your final answer below:
+              </p>
+              <div className="flex gap-3 items-center">
+                <Input
+                  value={answerGuess}
+                  onChange={(e) => setAnswerGuess(e.target.value)}
+                  placeholder="Enter the secret answer..."
+                  className="flex-1 bg-white/60 border-green-600/50 focus:border-green-800/80 h-11 font-mono tracking-wider text-stone-800"
+                  onKeyDown={(e) => e.key === "Enter" && handleAnswerSubmit()}
+                />
+                <Button
+                  onClick={handleAnswerSubmit}
+                  disabled={!answerGuess.trim()}
+                  className="bg-green-700 hover:bg-green-600 h-11 px-6 shadow-md shadow-green-900/20 text-white"
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  SOLVE
+                </Button>
+              </div>
+              {wrongAttempts > 0 && (
+                <p className="text-xs text-red-600">
+                  Wrong attempts: {wrongAttempts}/3
+                </p>
+              )}
             </div>
           </div>
         )}

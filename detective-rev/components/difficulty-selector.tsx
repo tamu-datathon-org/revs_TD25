@@ -5,32 +5,38 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { CaseFile } from "@/components/ui/case-file" // Use the new CaseFile component
-import { Skull, Eye, Zap, Crown } from "lucide-react"
+import { Skull, Eye, Zap, Crown, Shield } from "lucide-react"
 
 const difficulties = [
   {
-    id: "novice",
-    name: "Novice",
-    description: "The suspect is cooperative and provides clear clues to solve the case.",
+    id: "level1",
+    name: "Rookie Detective",
+    description: "The suspect is cooperative and might slip up easily.",
     icon: Eye,
   },
   {
-    id: "experienced",
-    name: "Experienced",
-    description: "The suspect is evasive and requires clever questioning to extract information.",
+    id: "level2",
+    name: "Experienced Detective",
+    description: "The suspect is more cautious and requires clever questioning.",
     icon: Zap,
   },
   {
-    id: "master",
-    name: "Master",
-    description: "The suspect actively misleads and conceals crucial information from you.",
+    id: "level3",
+    name: "Master Detective",
+    description: "The suspect actively tries to mislead and conceal information.",
     icon: Skull,
   },
   {
-    id: "legendary",
-    name: "Legendary",
-    description: "A master manipulator with hidden agendas and dark secrets.",
+    id: "level4",
+    name: "Elite Detective",
+    description: "A master manipulator with multiple layers of deception.",
     icon: Crown,
+  },
+  {
+    id: "level5",
+    name: "Impossible Mode",
+    description: "The ultimate challenge - virtually impossible to crack.",
+    icon: Shield,
   },
 ]
 
@@ -72,7 +78,7 @@ export function DifficultySelector({ onDifficultySelect }: DifficultySelectorPro
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
         {difficulties.map((difficulty) => (
           <CaseFile
             key={difficulty.id}
